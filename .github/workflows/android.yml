@@ -1,0 +1,47 @@
+name: Build Banzel (Android + Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - name: Generate platform folder
+        run: |
+          flutter create . --platforms=android --org ir.banzel --project-name banzel_app
+          cp app_src/main.dart lib/main.dart
+          M=android/app/src/main/AndroidManifest.xml
+          sed -i '0,/<application/s//<uses-permission android:name="android.permission.INTERNET"\/>\n    <application/' $M
+          sed -i 's/android:label="[^"]*"/android:label="بانزل زه"/' $M
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: banzel-android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - name: Generate platform folder
+        shell: bash
+        run: |
+          flutter create . --platforms=windows --org ir.banzel --project-name banzel_app
+          cp app_src/main.dart lib/main.dart
+      - run: flutter pub get
+      - run: flutter build windows --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: banzel-windows
+          path: build/windows/x64/runner/Release
