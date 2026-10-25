@@ -39,8 +39,12 @@ jobs:
         run: |
           flutter create . --platforms=windows --org ir.banzel --project-name banzel_app
           cp app_src/main.dart lib/main.dart
+          # رفع خطای STL1011 در افزونه webview_windows با کامپایلر جدید
+          sed -i '0,/^project(/s//add_definitions(-D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)\nproject(/' windows/CMakeLists.txt
       - run: flutter pub get
       - run: flutter build windows --release
+        env:
+          CL: /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS
       - uses: actions/upload-artifact@v4
         with:
           name: banzel-windows
